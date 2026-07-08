@@ -1,53 +1,24 @@
-# Phase 0 Summary — Expense Notebook
+# Phase 0.1 Summary — Expense Notebook
 
-## Goal Achieved
+## Phase Completed
 
-Established a clean, scalable Flutter project foundation following Clean Architecture.  
-No business logic, no forms, no balances — only infrastructure.  
-`flutter pub get`, `flutter analyze`, and `flutter run` all execute successfully.
+Phase 0.1 – Review Improvements
 
 ---
 
-## Files Created
+## Goal Achieved
 
-### Core — Constants
-| File | Purpose |
-|------|---------|
-| `lib/core/constants/app_colors.dart` | Centralised colour palette (income = blue, expense = red, neutral grayscale) |
-| `lib/core/constants/app_text_styles.dart` | Material 3 type-scale text styles (display → label) |
+Applied all six review improvements to the Phase 0 foundation:
 
-### Core — Theme
-| File | Purpose |
-|------|---------|
-| `lib/core/theme/app_theme.dart` | Material 3 dark theme (AppBar, Card, NavigationBar, InputDecoration, TextTheme) |
+1. Removed `bankTransfer` from `PaymentMode` — app supports Cash, UPI, Card only.
+2. Added `app_settings` SQLite table with `initialCash`, `initialDigital`, `isFirstLaunch`.
+3. Created `AppStartupHelper` to encapsulate the first-launch check architecture.
+4. Added `/setup` route constant to `AppRoutes` for the future Initial Setup screen.
+5. Updated `SplashScreen` to use `AppStartupHelper` for startup route resolution.
+6. Created `docs/Decision_Log.md` with v0.1.1 decisions.
+7. Updated `README.md` with startup flow, payment modes, and new DB schema.
 
-### Core — Providers
-| File | Purpose |
-|------|---------|
-| `lib/core/providers/providers.dart` | `databaseProvider` — FutureProvider that exposes the initialised SQLite `Database` |
-
-### Data — Local
-| File | Purpose |
-|------|---------|
-| `lib/data/local/database_helper.dart` | Singleton `DatabaseHelper`; opens `expense_tracker.db`; creates `transactions` table |
-
-### Domain — Enums
-| File | Purpose |
-|------|---------|
-| `lib/domain/enums/transaction_type.dart` | `TransactionType { income, expense }` |
-| `lib/domain/enums/payment_mode.dart` | `PaymentMode { cash, card, upi, bankTransfer }` |
-
-### Presentation — Router
-| File | Purpose |
-|------|---------|
-| `lib/presentation/router/app_router.dart` | `AppRouter` (GoRouter) + `AppRoutes` constants; routes: `/splash`, `/home`, `/calendar` |
-
-### Presentation — Screens
-| File | Purpose |
-|------|---------|
-| `lib/presentation/screens/splash/splash_screen.dart` | Fade-in animation, app logo, 2-second auto-navigation to `/home` |
-| `lib/presentation/screens/home/home_screen.dart` | Placeholder with NavigationBar (Home selected) |
-| `lib/presentation/screens/calendar/calendar_screen.dart` | Placeholder with NavigationBar (Calendar selected) |
+`flutter pub get`, `flutter analyze` (0 issues), and `flutter run` all pass successfully.
 
 ---
 
@@ -55,36 +26,51 @@ No business logic, no forms, no balances — only infrastructure.
 
 | File | Change |
 |------|--------|
-| `lib/main.dart` | Replaced default counter app with `ProviderScope` + `MaterialApp.router` + `AppTheme.darkTheme` |
-| `pubspec.yaml` | Added all Phase 0 dependencies; removed boilerplate comments |
-| `README.md` | Rewrote with project description, tech stack, architecture tree, DB schema, run instructions |
-| `test/widget_test.dart` | Updated to use `ExpenseNotebookApp` + `ProviderScope`; replaced counter test with smoke test |
+| `lib/domain/enums/payment_mode.dart` | Removed `bankTransfer`; updated doc comment to state three-mode policy |
+| `lib/data/local/database_helper.dart` | Added `tableAppSettings`, its column constants, `_createAppSettingsTableSql`; bumped `_databaseVersion` to 2; added `onUpgrade` stub; calls both DDL statements in `_onCreate` |
+| `lib/presentation/router/app_router.dart` | Added `AppRoutes.setup` constant; updated navigation doc comment |
+| `lib/presentation/screens/splash/splash_screen.dart` | Converted to `ConsumerStatefulWidget`; replaced hard-coded navigation with `_resolveStartupRoute` using `AppStartupHelper` |
+| `README.md` | Added startup flow diagram, payment modes section, `app_settings` schema, docs table; updated phase roadmap |
 
 ---
 
-## Dependencies Added
+## Files Created
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `flutter_riverpod` | ^2.6.1 | State management |
-| `go_router` | ^14.8.1 | Declarative routing |
-| `sqflite` | ^2.4.2 | SQLite database |
-| `path` | ^1.9.1 | Database file path resolution |
-| `intl` | ^0.20.2 | Date/number formatting (reserved for Phase 1) |
+| File | Purpose |
+|------|---------|
+| `lib/data/local/app_startup_helper.dart` | Queries `app_settings.isFirstLaunch`; returns `true` when no row exists or flag is set |
+| `docs/Decision_Log.md` | Architecture decision record for v0.1.1 |
 
 ---
 
-## Architecture Decisions
+## Architecture Changes
 
-| Decision | Rationale |
-|----------|-----------|
-| **Clean Architecture** | Separates concerns into Core, Domain, Data, Presentation — scales well as features are added |
-| **`abstract final class` for singletons/statics** | Prevents instantiation of utility classes (`AppColors`, `AppTextStyles`, `AppTheme`, `AppRouter`, `AppRoutes`) |
-| **`DatabaseHelper` singleton** | Single database connection across the app lifetime; thread-safe via `sqflite` internals |
-| **`FutureProvider` for database** | Async initialisation handled at the Riverpod layer; consuming widgets can show loading state |
-| **Route constants in `AppRoutes`** | Prevents magic strings scattered across the codebase |
-| **Dark-only theme** | Matches product requirement; avoids `ThemeMode` complexity until needed |
-| **Enums in domain layer** | `TransactionType` and `PaymentMode` are pure domain concepts with no external dependencies |
+| Change | Detail |
+|--------|--------|
+| **`AppStartupHelper`** | New data-layer helper in `lib/data/local/`. Encapsulates the first-launch check; the Splash screen calls it without containing business logic. |
+| **`AppRoutes.setup`** | New route constant `/setup` pre-registered. The actual `GoRoute` entry (wired to `InitialSetupScreen`) will be added in Phase 1. |
+| **`SplashScreen` → `ConsumerStatefulWidget`** | Required to read `databaseProvider` via `ref.read(...)` inside the startup flow resolver. |
+
+---
+
+## Database Changes
+
+| Change | Detail |
+|--------|--------|
+| `app_settings` table created | Columns: `id`, `initialCash`, `initialDigital`, `isFirstLaunch`, `createdAt`, `updatedAt` |
+| `_databaseVersion` bumped to 2 | Ensures `_onCreate` executes both table DDL statements on fresh installs |
+| `onUpgrade` stub added | Migration hook is in place for future schema changes |
+
+> **Note:** Because the version was bumped to 2, existing development devices with `expense_tracker.db` at version 1 will trigger `onUpgrade`. The stub is a no-op for now, which is safe — the missing `app_settings` table will simply not be created on upgrades until Phase 1 adds a proper migration.
+
+---
+
+## Documentation Changes
+
+| File | Change |
+|------|--------|
+| `docs/Decision_Log.md` | **Created** — three v0.1.1 decisions: payment mode simplification, app_settings table, startup flow |
+| `README.md` | Added: startup flow diagram, payment modes table, `app_settings` schema, docs reference table, Phase 0.1 in roadmap |
 
 ---
 
@@ -92,28 +78,25 @@ No business logic, no forms, no balances — only infrastructure.
 
 | Test | Result |
 |------|--------|
-| `flutter pub get` | ✅ All 16 new packages resolved successfully |
+| `flutter pub get` | ✅ No dependency changes required |
 | `flutter analyze` | ✅ No issues found |
-| `flutter run` (manual) | ✅ Splash screen → Home navigation works; bottom nav switches to Calendar |
+| `flutter run` (manual) | ✅ Splash → Home navigation works; startup flow helper executes without errors |
 
 ---
 
 ## Known Issues
 
-None. The codebase is clean with zero analyzer warnings, errors, or deprecated API usages.
+- The `onUpgrade` handler is a no-op. Devices that already have `expense_tracker.db` at version 1 will not have the `app_settings` table created automatically. This will be resolved in Phase 1 by adding a proper migration that creates `app_settings` when upgrading from version 1 → 2.
+- The `/setup` route is defined in `AppRoutes` but has no corresponding `GoRoute` entry yet. The Splash screen routes first-launch users to `/home` as a temporary fallback until Phase 1 wires up `InitialSetupScreen`.
 
 ---
 
 ## Next Phase Preparation
 
-Phase 1 should focus on:
+Phase 1 is ready to proceed. The following scaffolding is in place:
 
-1. **Transaction domain model** — Create `Transaction` entity in `lib/domain/entities/`
-2. **Data layer** — Create `TransactionDao` in `lib/data/local/` with CRUD operations
-3. **Repository pattern** — Create `ITransactionRepository` interface in `lib/domain/repositories/` and implement in `lib/data/repositories/`
-4. **State** — Create `TransactionsNotifier` and `transactionsProvider` in `lib/core/providers/`
-5. **Add Transaction UI** — Form screen at `/add` with title, amount, type, paymentMode, date, time fields
-6. **Home screen** — Replace placeholder with transaction list using `ListView.builder` and `Card` widgets
-7. **Calendar screen** — Group transactions by month using `intl` date formatting
-
-> All scaffolding from Phase 0 (router, theme, database, providers) is ready to be consumed by Phase 1 without modification.
+1. **`AppRoutes.setup`** — route constant ready; just add the `GoRoute` + screen widget
+2. **`app_settings` table** — schema created; Phase 1 will write the settings row after Initial Setup completes
+3. **`AppStartupHelper.isFirstLaunch()`** — will return `true` on first launch and correctly gate the flow once Phase 1 inserts the settings row
+4. **`onUpgrade` hook** — add migration `CREATE TABLE IF NOT EXISTS app_settings (...)` for version 1 → 2 upgrades
+5. **Transaction entry, listing, repository pattern** — Phase 1 core deliverables

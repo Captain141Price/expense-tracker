@@ -1,19 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/providers/providers.dart';
+import '../../../data/local/app_startup_helper.dart';
 import '../../router/app_router.dart';
 
 /// Splash screen shown on application launch.
 ///
-/// Displays the application name and logo for 2 seconds,
-/// then navigates to the Home screen.
-class SplashScreen extends StatefulWidget {
+/// Startup flow:
+///   1. Display branding with a fade-in animation.
+///   2. Initialise the database via [databaseProvider].
+///   3. Use [AppStartupHelper.isFirstLaunch] to decide the next route.
+///      - First launch  → [AppRoutes.setup]  (Initial Setup — Phase 1)
+///      - Returning     → [AppRoutes.home]
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _fadeAnimation;
@@ -34,13 +41,34 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    Future.delayed(const Duration(seconds: 2), _navigateToHome);
+    Future.delayed(const Duration(seconds: 2), _resolveStartupRoute);
   }
 
-  void _navigateToHome() {
-    if (mounted) {
-      context.go(AppRoutes.home);
-    }
+  /// Checks [AppStartupHelper.isFirstLaunch] and navigates accordingly.
+  ///
+  /// Falls back to [AppRoutes.home] if the database is not yet available
+  /// (AsyncValue is loading or in error state) to keep the UI unblocked.
+  Future<void> _resolveStartupRoute() async {
+    if (!mounted) return;
+
+    final dbAsync = ref.read(databaseProvider);
+
+    await dbAsync.when(
+      data: (db) async {
+        final helper = AppStartupHelper(db);
+        final firstLaunch = await helper.isFirstLaunch();
+        if (!mounted) return;
+        // /setup will be fully wired in Phase 1.
+        // Until then, first-launch also routes to home.
+        context.go(firstLaunch ? AppRoutes.home : AppRoutes.home);
+      },
+      loading: () {
+        if (mounted) context.go(AppRoutes.home);
+      },
+      error: (e, _) {
+        if (mounted) context.go(AppRoutes.home);
+      },
+    );
   }
 
   @override
@@ -89,3 +117,4 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 }
+

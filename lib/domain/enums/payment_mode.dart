@@ -1,20 +1,21 @@
 /// Represents the mode of payment used for a transaction.
+///
+/// Expense Notebook intentionally supports only three payment modes:
+/// Cash, UPI, and Card. Bank Transfer is deliberately excluded to keep
+/// the application simple.
 enum PaymentMode {
   cash,
-  card,
   upi,
-  bankTransfer;
+  card;
 
   String get label {
     switch (this) {
       case PaymentMode.cash:
         return 'Cash';
-      case PaymentMode.card:
-        return 'Card';
       case PaymentMode.upi:
         return 'UPI';
-      case PaymentMode.bankTransfer:
-        return 'Bank Transfer';
+      case PaymentMode.card:
+        return 'Card';
     }
   }
 }
