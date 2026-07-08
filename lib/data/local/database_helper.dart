@@ -58,9 +58,12 @@ class DatabaseHelper {
     await db.execute(_createAppSettingsTableSql);
   }
 
-  /// Handles schema migrations for future database version bumps.
+  /// Handles schema migrations between database versions.
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Migrations will be added here as new versions are introduced.
+    // v1 → v2: add app_settings table for first-launch flow.
+    if (oldVersion < 2) {
+      await db.execute(_createAppSettingsTableSql);
+    }
   }
 
   // ─── DDL ─────────────────────────────────────────────────────────────────

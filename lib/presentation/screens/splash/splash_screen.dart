@@ -2,17 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/providers.dart';
-import '../../../data/local/app_startup_helper.dart';
 import '../../router/app_router.dart';
 
 /// Splash screen shown on application launch.
 ///
 /// Startup flow:
-///   1. Display branding with a fade-in animation.
-///   2. Initialise the database via [databaseProvider].
-///   3. Use [AppStartupHelper.isFirstLaunch] to decide the next route.
-///      - First launch  → [AppRoutes.setup]  (Initial Setup — Phase 1)
-///      - Returning     → [AppRoutes.home]
+///   1. Display branding with a fade-in animation (900 ms).
+///   2. After 2 seconds, read [appSettingsProvider] to check first-launch status.
+///   3. Route decision:
+///      - No settings row (fresh install) → [AppRoutes.welcome]
+///      - Settings row exists             → [AppRoutes.home]
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -44,31 +43,39 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     Future.delayed(const Duration(seconds: 2), _resolveStartupRoute);
   }
 
-  /// Checks [AppStartupHelper.isFirstLaunch] and navigates accordingly.
+  /// Reads [appSettingsProvider] and navigates to the correct screen.
   ///
-  /// Falls back to [AppRoutes.home] if the database is not yet available
-  /// (AsyncValue is loading or in error state) to keep the UI unblocked.
+  /// Falls back to [AppRoutes.home] on any provider error to avoid
+  /// leaving the user stuck on the splash screen.
   Future<void> _resolveStartupRoute() async {
     if (!mounted) return;
 
-    final dbAsync = ref.read(databaseProvider);
+    final settingsAsync = ref.read(appSettingsProvider);
 
-    await dbAsync.when(
-      data: (db) async {
-        final helper = AppStartupHelper(db);
-        final firstLaunch = await helper.isFirstLaunch();
+    settingsAsync.when(
+      data: (settings) {
         if (!mounted) return;
-        // /setup will be fully wired in Phase 1.
-        // Until then, first-launch also routes to home.
-        context.go(firstLaunch ? AppRoutes.home : AppRoutes.home);
+        final isFirst = settings == null || settings.isFirstLaunch;
+        context.go(isFirst ? AppRoutes.welcome : AppRoutes.home);
       },
       loading: () {
-        if (mounted) context.go(AppRoutes.home);
+        // Provider still loading — wait for the listener below to fire.
       },
       error: (e, _) {
         if (mounted) context.go(AppRoutes.home);
       },
     );
+
+    // If the provider was still loading, listen for when it resolves.
+    if (settingsAsync.isLoading) {
+      ref.listenManual(appSettingsProvider, (_, next) {
+        next.whenData((settings) {
+          if (!mounted) return;
+          final isFirst = settings == null || settings.isFirstLaunch;
+          context.go(isFirst ? AppRoutes.welcome : AppRoutes.home);
+        });
+      });
+    }
   }
 
   @override
@@ -117,4 +124,3 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     );
   }
 }
-
