@@ -1,17 +1,96 @@
-# expense_tracker
+# Expense Notebook
 
-A new Flutter project.
+A clean, scalable personal finance tracker built with Flutter.  
+Track income and expenses with ease — designed for clarity and speed.
+
+---
+
+## Tech Stack
+
+| Layer            | Technology                    |
+|------------------|-------------------------------|
+| UI Framework     | Flutter (Stable) + Material 3 |
+| State Management | Riverpod                      |
+| Routing          | go_router                     |
+| Database         | SQLite (sqflite)              |
+| Formatting       | intl                          |
+
+---
+
+## Architecture
+
+This project follows **Clean Architecture**, separating concerns into four layers:
+
+```
+lib/
+├── core/
+│   ├── constants/        # AppColors, AppTextStyles
+│   ├── providers/        # Riverpod providers
+│   ├── theme/            # AppTheme (Material 3 dark)
+│   └── utils/            # Shared utilities (reserved)
+│
+├── data/
+│   └── local/            # DatabaseHelper (SQLite)
+│
+├── domain/
+│   └── enums/            # TransactionType, PaymentMode
+│
+└── presentation/
+    ├── router/           # AppRouter (go_router)
+    └── screens/
+        ├── splash/       # SplashScreen
+        ├── home/         # HomeScreen
+        └── calendar/     # CalendarScreen
+```
+
+---
+
+## Theme
+
+- **Dark mode only** (Material 3)
+- 🔵 Blue → Income
+- 🔴 Red → Expense
+- ⚫ Neutral grayscale → everything else
+- Rounded cards (`borderRadius: 16`)
+- Modern typography (Material 3 type scale)
+
+---
+
+## Database Schema
+
+**Table: `transactions`**
+
+| Column        | Type    | Constraints          |
+|---------------|---------|----------------------|
+| `id`          | INTEGER | PRIMARY KEY AUTOINCREMENT |
+| `title`       | TEXT    | NOT NULL             |
+| `amount`      | REAL    | NOT NULL             |
+| `type`        | TEXT    | NOT NULL             |
+| `paymentMode` | TEXT    | NOT NULL             |
+| `date`        | TEXT    | NOT NULL             |
+| `time`        | TEXT    | NOT NULL             |
+| `createdAt`   | TEXT    | NOT NULL             |
+| `updatedAt`   | TEXT    | NOT NULL             |
+
+---
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+```bash
+# Install dependencies
+flutter pub get
 
-A few resources to get you started if this is your first Flutter project:
+# Analyse code
+flutter analyze
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+# Run the app
+flutter run
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
+
+## Development Phases
+
+- **Phase 0** ✅ — Project foundation (architecture, theme, database, routing)
+- **Phase 1** 🔜 — Core features (transaction entry, listing)
+- **Phase 2** 🔜 — Calendar view and filtering
