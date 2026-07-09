@@ -8,9 +8,20 @@ import '../../data/repositories/transaction_repository_impl.dart';
 import '../../domain/entities/app_settings.dart';
 import '../../domain/entities/dashboard_summary.dart';
 import '../../domain/entities/transaction_entry.dart';
+import '../../domain/enums/payment_mode.dart';
 import '../../domain/repositories/app_settings_repository.dart';
 import '../../domain/repositories/transaction_repository.dart';
 import '../../domain/services/transaction_service.dart';
+
+// ─── Session State ────────────────────────────────────────────────────────────
+
+/// Remembers the user's last-used [PaymentMode] for the current app session.
+///
+/// Not persisted to the database — resets to [PaymentMode.cash] on app restart.
+/// Updated by [AddTransactionSheet] after every successful save.
+final lastPaymentModeProvider = StateProvider<PaymentMode>(
+  (ref) => PaymentMode.cash,
+);
 
 // ─── Database ────────────────────────────────────────────────────────────────
 

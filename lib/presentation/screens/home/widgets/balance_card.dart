@@ -7,10 +7,10 @@ import '../../../../domain/entities/dashboard_summary.dart';
 
 /// Displays the Total Balance prominently at the top of the Dashboard.
 ///
-/// Task 1 — Phase 2.1:
-///   - Full width
-///   - Increased padding for visual weight
-///   - "Available Balance" subtitle below the amount
+/// Phase 2.2 — Task 5: The balance amount animates with a 250 ms fade whenever
+/// the value changes. [skipLoadingOnReload] prevents a loading-spinner flash
+/// when the provider is invalidated after a transaction mutation; the old value
+/// stays visible until the new value arrives, then the AnimatedSwitcher fires.
 class BalanceCard extends StatelessWidget {
   const BalanceCard({super.key, required this.summaryAsync});
 
@@ -35,12 +35,19 @@ class BalanceCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               summaryAsync.when(
+                // Task 5: keep previous data visible during reload to avoid
+                // a spinner flash; AnimatedSwitcher fires on data→data change
+                skipLoadingOnReload: true,
                 data: (summary) => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      CurrencyFormatter.format(summary.totalBalance),
-                      style: AppTextStyles.headlineLarge,
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      child: Text(
+                        key: ValueKey(summary.totalBalance),
+                        CurrencyFormatter.format(summary.totalBalance),
+                        style: AppTextStyles.headlineLarge,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(

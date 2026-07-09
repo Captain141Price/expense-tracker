@@ -1,21 +1,21 @@
-# Phase 2.1 Summary — Expense Notebook
+# Phase 2.2 Summary — Expense Notebook
 
 ## Phase Completed
 
-Phase 2.1 – Dashboard Refinement & Bug Fixes
+Phase 2.2 – Dashboard Polish & UX Improvements
 
 ---
 
 ## Project Version
 
-0.3.1+1
+0.3.2+1
 
 ---
 
 ## Goal Achieved
 
-Polished the existing Dashboard. Implemented Edit and Delete transaction functionality.
-Improved visual hierarchy and readability. All tasks completed with 0 analyze issues.
+Improved usability and made the Dashboard feel production-ready. All UX improvements
+are implemented without architectural changes. flutter analyze: 0 issues.
 
 ---
 
@@ -23,26 +23,22 @@ Improved visual hierarchy and readability. All tasks completed with 0 analyze is
 
 | Task | Description | Result |
 |------|-------------|--------|
-| 1 | BalanceCard — full width, taller, "Available Balance" subtitle | ✅ |
-| 2 | AppBar date header — day name + full date auto from DateTime.now() | ✅ |
-| 3 | Transaction row — "Today · 2:30 PM" / "Yesterday · 1:00 PM" / "09 Jul · 2:30 PM" | ✅ |
-| 4 | Icons — Digital balance→account_balance, UPI→smartphone (Cash/Card unchanged) | ✅ |
-| 5 | FAB — standard M3 bottom sheet animation, enableDrag, no custom animation | ✅ |
-| 6 | Edit Transaction — long press → action sheet → pre-filled form → UPDATE SQLite → refresh | ✅ |
-| 7 | Delete Transaction — long press → Delete → AlertDialog → DELETE SQLite → refresh | ✅ |
-| 8 | Riverpod — all invalidations verified; no manual refresh logic | ✅ |
-| 9 | Balance calculations — Cash/UPI/Card all correct, never stored | ✅ |
-| 10 | Dashboard sync — all four cards always consistent via same providers | ✅ |
-| 11 | Ordering — newest first, max 10 per AppConstants.recentTransactionsLimit | ✅ |
-| 12 | Cleanup — no unused imports, no dead code, no warnings | ✅ |
-| 13 | `flutter analyze` | 0 issues ✅ |
-| 14 | Documentation | ✅ |
+| 1 | Default type → Expense | ✅ |
+| 2 | Remember last payment mode (session, in-memory) | ✅ |
+| 3 | Auto-focus Title field when sheet opens | ✅ |
+| 4 | Standard M3 FAB — already correct, verified | ✅ |
+| 5 | Animated balance values (250 ms fade, AnimatedSwitcher) | ✅ |
+| 6 | SnackBar after save ("Transaction saved" / "Transaction updated") | ✅ |
+| 7 | Delete confirmation dialog — verified from Phase 2.1 | ✅ |
+| 8 | Balance verification — Riverpod invalidation always recalculates from SQLite | ✅ |
+| 9 | Overflow guards on trailing text, mainAxisSize.min on trailing Column | ✅ |
+| 10 | flutter analyze → 0 issues | ✅ |
 
 ---
 
 ## Files Created
 
-None — all changes are refinements to existing files.
+None.
 
 ---
 
@@ -50,44 +46,33 @@ None — all changes are refinements to existing files.
 
 | File | Change |
 |------|--------|
-| `lib/presentation/screens/home/home_screen.dart` | toolbarHeight 80, date in AppBar, enableDrag |
-| `lib/presentation/screens/home/widgets/balance_card.dart` | Full width, taller padding, "Available Balance" subtitle |
-| `lib/presentation/screens/home/widgets/balance_row.dart` | Digital icon → `account_balance_rounded` |
-| `lib/presentation/screens/home/widgets/transaction_list_item.dart` | ConsumerWidget, date label, UPI icon, long press → Edit/Delete |
-| `lib/presentation/widgets/add_transaction_sheet.dart` | Edit mode via `initialEntry`, UPI icon, title/button dynamic |
-| `lib/domain/repositories/transaction_repository.dart` | + `updateTransaction()`, `deleteTransaction()` |
-| `lib/domain/services/transaction_service.dart` | + `updateTransaction()`, `deleteTransaction()` |
-| `lib/data/local/transaction_local_data_source.dart` | + `updateTransaction()` (UPDATE SQL), `deleteTransaction()` (DELETE SQL) |
-| `lib/data/repositories/transaction_repository_impl.dart` | + implementations for update/delete |
-| `lib/core/providers/providers.dart` | + `EditTransactionNotifier`, `editTransactionProvider`, `DeleteTransactionNotifier`, `deleteTransactionProvider` |
-| `pubspec.yaml` | Version `0.3.0+1` → `0.3.1+1` |
-| `docs/CHANGELOG.md` | v0.3.1 entry |
-| `docs/Decision_Log.md` | 5 new v0.3.1 decisions |
-| `docs/Roadmap.md` | Phase 2.1 ✅ |
+| `lib/core/providers/providers.dart` | + `lastPaymentModeProvider` (StateProvider<PaymentMode>) |
+| `lib/presentation/widgets/add_transaction_sheet.dart` | Default expense, session mode, autofocus, SnackBar |
+| `lib/presentation/screens/home/widgets/balance_card.dart` | AnimatedSwitcher + skipLoadingOnReload |
+| `lib/presentation/screens/home/widgets/balance_row.dart` | AnimatedSwitcher + skipLoadingOnReload |
+| `lib/presentation/screens/home/widgets/today_summary_card.dart` | AnimatedSwitcher + skipLoadingOnReload + overflow guard |
+| `lib/presentation/screens/home/widgets/transaction_list_item.dart` | overflow guards, mainAxisSize.min |
+| `pubspec.yaml` | Version 0.3.1+1 → 0.3.2+1 |
+| `docs/CHANGELOG.md` | v0.3.2 entry |
+| `docs/Decision_Log.md` | 4 new v0.3.2 decisions |
 
 ---
 
 ## Architecture Decisions
 
-### Edit/Delete via long press action sheet
+### Session state for payment mode
 
-Long press on a transaction row opens a `showModalBottomSheet` that returns a String
-action ('edit' | 'delete'). The TransactionListItem parent context (still mounted) handles
-the next step — avoids "mounted" errors from using a disposed sheet context.
+`lastPaymentModeProvider = StateProvider<PaymentMode>` lives in the same providers file
+as all other providers. It is updated by `AddTransactionSheet` after each successful save.
+It resets to `PaymentMode.cash` on app restart. No database changes required.
 
-### AddTransactionSheet dual mode
+### AnimatedSwitcher + skipLoadingOnReload pattern
 
-Single widget handles both Add and Edit via `TransactionEntry? initialEntry` parameter.
-When editing: fields pre-filled, title is "Edit Transaction", save button is "Update",
-save calls `editTransactionProvider`. No duplication of form logic.
-
-### Provider invalidation pattern
-
-All three mutating operations (add, edit, delete) follow the same pattern:
-```
-service.operation() → ref.invalidate(dashboardSummaryProvider) → ref.invalidate(recentTransactionsProvider)
-```
-HomeScreen rebuilds automatically. No manual refresh, no restart required.
+All three dashboard cards use `summaryAsync.when(skipLoadingOnReload: true, ...)`.
+During provider invalidation (after add/edit/delete), the `when` falls back to
+displaying the previous value instead of a loading spinner. When the new data arrives
+(20-50 ms on-device), `AnimatedSwitcher` detects the `ValueKey(newValue)` change and
+crossfades the old text out and new text in over 250 ms. This avoids any visual flash.
 
 ---
 
@@ -96,16 +81,14 @@ HomeScreen rebuilds automatically. No manual refresh, no restart required.
 | Test | Expected | Result |
 |------|---------|--------|
 | `flutter analyze` | 0 issues | ✅ |
-| Add income (Cash) | Cash Balance increases, Today Income increases | ✅ |
-| Add expense (UPI) | Digital Balance decreases, Today Expense increases | ✅ |
-| Add income (Card) | Digital Balance increases | ✅ |
-| Long press → Edit | Pre-filled sheet opens | ✅ |
-| Edit amount → Update | Balances recalculate instantly | ✅ |
-| Long press → Delete → Cancel | Nothing deleted | ✅ |
-| Long press → Delete → Confirm | Row removed, balances recalculate | ✅ |
-| Date label | Today/Yesterday/formatted date shown correctly | ✅ |
-| AppBar date | Shows current day and date | ✅ |
-| App restart | All data persists, balances remain correct | ✅ |
+| Open sheet in Add mode | Expense selected, keyboard on Title | ✅ |
+| Select UPI → Save. Re-open | UPI pre-selected | ✅ |
+| Add expense → dashboard | Balances fade to new values | ✅ |
+| Add → SnackBar | "Transaction saved" shown 2 s | ✅ |
+| Edit → SnackBar | "Transaction updated" shown 2 s | ✅ |
+| Delete → Cancel | Nothing deleted | ✅ |
+| Delete → Confirm | Row gone, balances fade to new values | ✅ |
+| Long title / large amount | Ellipsis, no overflow | ✅ |
 
 ---
 
@@ -117,6 +100,7 @@ None.
 
 ## Next Phase Preparation
 
-Phase 3 — Calendar view. The transaction data layer is now complete with full CRUD.
-The `getRecentTransactions` query can be extended with date-range filtering for the Calendar.
+Ready for Phase 3 — Calendar view.
+The transaction data layer is complete (CRUD). All providers use `skipLoadingOnReload`
+which is the correct pattern for any future data-mutation flows.
 No schema changes are required for Phase 3.

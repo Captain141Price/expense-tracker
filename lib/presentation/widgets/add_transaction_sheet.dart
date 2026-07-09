@@ -12,18 +12,17 @@ import '../../domain/enums/transaction_type.dart';
 /// Material 3 bottom sheet for adding OR editing a transaction.
 ///
 /// **Add mode** (`initialEntry == null`):
-///   - All fields start blank / defaulted.
-///   - Title: "Add Transaction", button: "Save".
-///   - On save: calls [addTransactionProvider].
+///   - Type defaults to [TransactionType.expense] (most common action).
+///   - Payment mode defaults to the last-used mode for this session.
+///   - Title field auto-focuses; keyboard opens immediately.
+///   - On success: SnackBar "Transaction saved" + sheet dismissed.
 ///
 /// **Edit mode** (`initialEntry != null`):
 ///   - All fields pre-filled from [initialEntry].
-///   - Title: "Edit Transaction", button: "Update".
-///   - On save: calls [editTransactionProvider].
-///   - The entry's `isEdited` flag is set to `true`.
+///   - On success: SnackBar "Transaction updated" + sheet dismissed.
 ///
-/// On success both modes invalidate [dashboardSummaryProvider] and
-/// [recentTransactionsProvider] so the Dashboard refreshes instantly.
+/// Both modes invalidate [dashboardSummaryProvider] and
+/// [recentTransactionsProvider] for an instant Dashboard refresh.
 class AddTransactionSheet extends ConsumerStatefulWidget {
   const AddTransactionSheet({super.key, this.initialEntry});
 
@@ -50,6 +49,8 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
 
   static final _displayDateFmt = DateFormat('d MMM yyyy');
 
+  // ─── Lifecycle ────────────────────────────────────────────────────────────
+
   @override
   void initState() {
     super.initState();
@@ -57,7 +58,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
     if (entry != null) {
       // ── Edit mode: pre-fill all fields from existing entry ──────────────
       _titleController.text = entry.title;
-      // Format amount: show integer if whole number, else two decimal places
+      // Show integer amounts without trailing ".0"; decimals with 2dp
       _amountController.text = entry.amount == entry.amount.truncateToDouble()
           ? entry.amount.toInt().toString()
           : entry.amount.toStringAsFixed(2);
@@ -66,10 +67,12 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
       _selectedDate = entry.dateTime;
       _selectedTime = TimeOfDay.fromDateTime(entry.dateTime);
     } else {
-      // ── Add mode: default to now ─────────────────────────────────────────
+      // ── Add mode ─────────────────────────────────────────────────────────
       final now = DateTime.now();
-      _selectedType = TransactionType.income;
-      _selectedMode = PaymentMode.cash;
+      // Task 1: default to Expense (most frequent action in an expense tracker)
+      _selectedType = TransactionType.expense;
+      // Task 2: restore last-used payment mode for this session
+      _selectedMode = ref.read(lastPaymentModeProvider);
       _selectedDate = now;
       _selectedTime = TimeOfDay.fromDateTime(now);
     }
@@ -150,7 +153,23 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
         );
         await ref.read(addTransactionProvider.notifier).addTransaction(entry);
       }
-      if (mounted) Navigator.of(context).pop();
+
+      // Task 2: persist last-used payment mode for the session
+      ref.read(lastPaymentModeProvider.notifier).state = _selectedMode;
+
+      if (mounted) {
+        // Task 6: show success SnackBar before dismissing
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              widget.isEditing ? 'Transaction updated' : 'Transaction saved',
+            ),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.of(context).pop();
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -235,11 +254,12 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
               ),
               const SizedBox(height: 16),
 
-              // ── Title field ──────────────────────────────────────────────
+              // ── Title field (Task 3: autofocus) ──────────────────────────
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: 'Title'),
                 textCapitalization: TextCapitalization.sentences,
+                autofocus: true, // Task 3: keyboard opens immediately
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) {

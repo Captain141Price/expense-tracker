@@ -134,3 +134,24 @@ Changed
 - `home_screen.dart` — `toolbarHeight: 80`, date shown in AppBar, `enableDrag: true` on sheet
 
 Status: Stable
+
+---
+
+## v0.3.2 — Phase 2.2: Dashboard Polish & UX Improvements
+
+Added
+
+- `lastPaymentModeProvider` (`StateProvider<PaymentMode>`) — session-level memory of last-used payment mode, resets on restart
+- `AnimatedSwitcher` (250 ms fade) on Total Balance, Cash Balance, Digital Balance, Today Income/Expense/Net
+- `skipLoadingOnReload: true` on all `.when()` calls — prevents spinner flash during provider invalidation
+- SnackBar confirmation after Add ("Transaction saved") and Edit ("Transaction updated")
+
+Changed
+
+- `AddTransactionSheet` default type: `income` → `expense` (most frequent action)
+- `AddTransactionSheet` payment mode: restored from `lastPaymentModeProvider` in add mode
+- `AddTransactionSheet` title field: `autofocus: true` — keyboard opens immediately
+- `TransactionListItem` trailing column: `overflow: TextOverflow.ellipsis`, `mainAxisSize: MainAxisSize.min`
+- `_SummaryItem` value text: `overflow: TextOverflow.ellipsis`
+
+Status: Stable

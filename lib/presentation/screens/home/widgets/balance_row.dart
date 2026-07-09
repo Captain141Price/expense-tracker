@@ -8,6 +8,8 @@ import '../../../../domain/entities/dashboard_summary.dart';
 /// Displays Cash Balance and Digital Balance side-by-side.
 ///
 /// Each item is a separate Card so they expand equally and align cleanly.
+///
+/// Phase 2.2 — Task 5: balance values animate with a 250 ms fade on change.
 class BalanceRow extends StatelessWidget {
   const BalanceRow({super.key, required this.summaryAsync});
 
@@ -71,10 +73,16 @@ class _BalanceItem extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
+            // Task 5: animate balance value on change; skip reload spinner
             valueAsync.when(
-              data: (value) => Text(
-                CurrencyFormatter.format(value),
-                style: AppTextStyles.titleMedium,
+              skipLoadingOnReload: true,
+              data: (value) => AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                child: Text(
+                  key: ValueKey(value),
+                  CurrencyFormatter.format(value),
+                  style: AppTextStyles.titleMedium,
+                ),
               ),
               loading: () => const SizedBox(
                 width: 20,

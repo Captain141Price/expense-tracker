@@ -230,3 +230,53 @@ Phase 5 will add the SQL column; for now, the flag is in-memory only.
 Showing "Today" and "Yesterday" gives users immediate time context without requiring them
 to parse a date. Falling back to "d MMM yyyy" for older dates provides full context.
 The comparison uses DateTime without time components so it is timezone-safe for IST.
+
+---
+
+## Version 0.3.2 (Phase 2.2)
+
+---
+
+### Decision — Default transaction type is Expense
+
+**Reason**
+
+Expense Notebook is primarily used to record spending. Defaulting to Expense eliminates
+one tap for the vast majority of entries. Income is still reachable with a single tap on
+the SegmentedButton. This matches the app's stated purpose (offline expense tracking).
+
+---
+
+### Decision — Session-level payment mode memory via StateProvider (not database)
+
+**Reason**
+
+Persisting the last payment mode to SQLite would add a settings row, a migration,
+and a database read on every sheet open. Since the memory only needs to survive within
+a single session, a `StateProvider<PaymentMode>` is sufficient, simpler, and zero-cost.
+The preference resets when the app restarts, which is acceptable for this use case.
+
+---
+
+### Decision — AnimatedSwitcher with skipLoadingOnReload instead of TweenAnimationBuilder
+
+**Reason**
+
+`TweenAnimationBuilder<double>` would interpolate numeric values (e.g. ₹500 → ₹750 over
+250 ms), which is visually flashy and not appropriate for an accounting context.
+`AnimatedSwitcher` with a simple fade is subtler: it crossfades between the old formatted
+string and the new formatted string. `skipLoadingOnReload: true` prevents the provider from
+emitting a loading state during re-fetch after invalidation, so the old value stays visible
+until the new value arrives — no spinner flash, clean fade-only transition.
+
+---
+
+### Decision — SnackBar before Navigator.pop (not after)
+
+**Reason**
+
+`ScaffoldMessenger` is owned by `MaterialApp` and survives sheet dismissal.
+However, calling `ScaffoldMessenger.of(context)` after `Navigator.pop` risks a
+"mounted" check failure on the sheet's context. Showing the SnackBar first (while
+the sheet is still mounted) and then popping is the safe ordering that avoids
+any async gap between pop and snackbar display.

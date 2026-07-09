@@ -8,8 +8,9 @@ import '../../../../domain/entities/dashboard_summary.dart';
 /// Shows Today's Income, Expense, and Net in a single card.
 ///
 /// Income is blue, Expense is red, Net is coloured based on sign.
-/// The three columns are separated by thin vertical dividers rendered via
-/// [IntrinsicHeight] so they stretch to match the tallest sibling.
+/// Columns are separated by thin [VerticalDivider]s inside [IntrinsicHeight].
+///
+/// Phase 2.2 — Task 5: each value animates with a 250 ms fade on change.
 class TodaySummaryCard extends StatelessWidget {
   const TodaySummaryCard({super.key, required this.summaryAsync});
 
@@ -33,6 +34,8 @@ class TodaySummaryCard extends StatelessWidget {
             const Divider(height: 1),
             const SizedBox(height: 12),
             summaryAsync.when(
+              // Task 5: keep old values visible during reload
+              skipLoadingOnReload: true,
               data: (summary) {
                 final netColor = summary.todayNet >= 0
                     ? AppColors.income
@@ -112,11 +115,17 @@ class _SummaryItem extends StatelessWidget {
       children: [
         Text(label, style: AppTextStyles.labelMedium),
         const SizedBox(height: 4),
-        Text(
-          CurrencyFormatter.format(value),
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: color,
-            fontWeight: FontWeight.w600,
+        // Task 5: 250 ms fade animation when value changes
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: Text(
+            key: ValueKey(value),
+            CurrencyFormatter.format(value),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+            overflow: TextOverflow.ellipsis, // Task 9: overflow guard
           ),
         ),
       ],

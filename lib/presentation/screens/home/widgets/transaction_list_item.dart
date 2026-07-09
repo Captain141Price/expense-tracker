@@ -207,6 +207,7 @@ class TransactionListItem extends ConsumerWidget {
         trailing: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               '$prefix${CurrencyFormatter.format(entry.amount)}',
@@ -214,11 +215,13 @@ class TransactionListItem extends ConsumerWidget {
                 color: color,
                 fontWeight: FontWeight.w600,
               ),
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 2),
             Text(
               '$dateLabel · $timeLabel',
               style: AppTextStyles.labelSmall,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
