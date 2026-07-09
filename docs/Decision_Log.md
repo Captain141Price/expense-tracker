@@ -107,3 +107,126 @@ After saving the initial balances, `ref.invalidate(appSettingsProvider)`
 forces a fresh read of `app_settings` on the next access. This ensures
 returning users are correctly routed to Home (not Welcome) on the next
 app launch without requiring a manual cache clear.
+
+---
+
+## Version 0.3.0
+
+---
+
+### Decision — TransactionService layer between Riverpod and Repository
+
+**Reason**
+
+All balance calculations live in `TransactionService`, not in the repository or UI.
+This enforces the architectural rule that business logic never leaks into the data or
+presentation layers. The repository exposes only raw SQL aggregation helpers; the service
+composes them into `DashboardSummary`.
+
+---
+
+### Decision — DashboardSummary model encapsulates all dashboard data
+
+**Reason**
+
+A single `DashboardSummary` object returned by one provider (`dashboardSummaryProvider`)
+is simpler and cheaper than four separate providers for each balance value.
+`totalBalance` and `todayNet` are derived getters on the model — they are never stored
+in the database.
+
+---
+
+### Decision — enum.name for all SQL type/mode bindings
+
+**Reason**
+
+Using `TransactionType.income.name` → `"income"` and `PaymentMode.cash.name` → `"cash"`
+avoids hardcoded magic strings in SQL. If an enum case is renamed, Dart's compiler catches
+it immediately. All IN-clause parameters are built from `List<PaymentMode>` → `.map((m) => m.name)`.
+
+---
+
+### Decision — TransactionEntry.dateTime (single DateTime, not separate date/time strings)
+
+**Reason**
+
+The domain entity exposes one `DateTime` for ergonomic use in the service and UI layers.
+The data source splits it on write (`yyyy-MM-dd` / `HH:mm`) and rejoins on read, keeping
+the SQLite schema unchanged.
+
+---
+
+### Decision — isEdited field added to TransactionEntry (default false, not yet persisted)
+
+**Reason**
+
+Phase 5 will add Edit/Delete support. Adding the field now means no breaking change to
+the domain entity later. The SQLite column will be added via migration in Phase 5;
+the data source currently hard-codes `isEdited: false` on every read.
+
+---
+
+### Decision — AddTransactionNotifier re-throws on failure
+
+**Reason**
+
+`AsyncValue.guard` silently swallows exceptions into `AsyncError` state. The bottom sheet
+needs to display an error snackbar, which requires the exception to propagate to the call site.
+Setting state to `AsyncError` and then re-throwing satisfies both: the provider reflects the
+error state and the sheet's try/catch can show user-facing feedback.
+
+---
+
+## Version 0.3.1 (Phase 2.1)
+
+---
+
+### Decision — Edit/Delete via long press action sheet (not swipe)
+
+**Reason**
+
+Swipe-to-delete conflicts with the horizontal scroll behavior of some list containers
+and provides no affordance for Edit. A long press action sheet is a standard Material 3
+pattern that cleanly exposes both Edit and Delete without cluttering the row UI.
+
+---
+
+### Decision — showModalBottomSheet returns a String action, then parent context handles navigation
+
+**Reason**
+
+After the action sheet is dismissed, its BuildContext is disposed. Using the parent
+widget's (TransactionListItem) context — which remains mounted — to open the Edit sheet
+or Delete dialog ensures no "mounted" errors after async gaps. The action sheet returns
+a String ('edit' | 'delete') to the awaited future; the parent then acts on that result.
+
+---
+
+### Decision — AddTransactionSheet dual mode via initialEntry parameter
+
+**Reason**
+
+A single widget that handles both Add and Edit reduces duplication. The `initialEntry`
+parameter is null for Add and non-null for Edit. The sheet dynamically changes its title,
+button label, and save logic based on `isEditing`. Both paths share the same form,
+validation, pickers, and styling.
+
+---
+
+### Decision — isEdited flag set on entity in service caller, not in data source
+
+**Reason**
+
+The `isEdited` flag is set by the caller (`AddTransactionSheet` via `copyWith(isEdited: true)`)
+before passing to the service. The data source does not know about this business rule.
+Phase 5 will add the SQL column; for now, the flag is in-memory only.
+
+---
+
+### Decision — Date label uses "Today" / "Yesterday" / formatted date (not absolute date only)
+
+**Reason**
+
+Showing "Today" and "Yesterday" gives users immediate time context without requiring them
+to parse a date. Falling back to "d MMM yyyy" for older dates provides full context.
+The comparison uses DateTime without time components so it is timezone-safe for IST.

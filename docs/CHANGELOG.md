@@ -65,3 +65,72 @@ Flow
   Returning user: Splash → Home
 
 Status: Stable
+
+---
+
+## v0.3.0 — Phase 2: Dashboard & Transactions
+
+Added
+
+- `AppConstants` — shared constant `recentTransactionsLimit = 10`
+- `CurrencyFormatter` — Indian Rupee (₹) formatting via `intl` en_IN locale
+- `TransactionEntry` — domain entity (unified `DateTime`, `isEdited` flag reserved for Phase 5)
+- `DashboardSummary` — encapsulates all dashboard data; `totalBalance` and `todayNet` are derived getters
+- `TransactionRepository` — abstract interface (raw SQL aggregation primitives only)
+- `TransactionService` — service layer: all balance calculations centralised here
+- `TransactionLocalDataSource` — SQLite CRUD using `enum.name` for type-safe SQL bindings
+- `TransactionRepositoryImpl` — concrete implementation
+- `transactionRepositoryProvider` — Riverpod FutureProvider
+- `transactionServiceProvider` — Riverpod FutureProvider
+- `dashboardSummaryProvider` — FutureProvider<DashboardSummary>
+- `recentTransactionsProvider` — FutureProvider<List<TransactionEntry>>
+- `AddTransactionNotifier` + `addTransactionProvider` — inserts to SQLite and invalidates dashboard providers
+- `BalanceCard` — Total Balance hero card
+- `BalanceRow` — Cash Balance + Digital Balance side-by-side
+- `TodaySummaryCard` — Today Income / Expense / Net with VerticalDividers
+- `TransactionListItem` — title, payment mode icon, amount (blue/red), time
+- `RecentTransactionsSection` — list or empty-state text
+- `AddTransactionSheet` — Material 3 bottom sheet with Income/Expense toggle,
+  Title, Amount, Payment Mode SegmentedButton, Date/Time pickers, Save + validation
+
+Changed
+
+- `HomeScreen` — placeholder replaced with full dashboard (ConsumerWidget)
+- `providers.dart` — added 5 new providers
+
+Balance Rules
+
+  Cash → Cash Balance
+  UPI  → Digital Balance
+  Card → Digital Balance
+  Total Balance = Cash + Digital (derived, never stored)
+  Today's Net   = Today Income − Today Expense (derived, never stored)
+
+Status: Stable
+
+---
+
+## v0.3.1 — Phase 2.1: Dashboard Refinement & Bug Fixes
+
+Added
+
+- Edit Transaction: long press → action sheet → pre-filled [AddTransactionSheet] → UPDATE SQLite → refresh
+- Delete Transaction: long press → Delete → confirmation dialog → DELETE SQLite → refresh
+- `updateTransaction()` on LocalDataSource, Repository, Service
+- `deleteTransaction()` on LocalDataSource, Repository, Service
+- `EditTransactionNotifier` + `editTransactionProvider`
+- `DeleteTransactionNotifier` + `deleteTransactionProvider`
+- Date label on each transaction row: "Today", "Yesterday", or "09 Jul 2026"
+- Today's date shown in AppBar below "Expense Notebook" (day name + full date)
+- "Available Balance" subtitle on Total Balance card
+
+Changed
+
+- `BalanceCard` — full width, taller (padding 24), "Available Balance" subtitle
+- `TransactionListItem` — ConsumerWidget, date·time label, UPI icon→smartphone, long press actions
+- `balance_row.dart` — Digital icon: `account_balance_wallet_rounded` → `account_balance_rounded`
+- `AddTransactionSheet` — supports edit mode via `initialEntry` parameter
+- `add_transaction_sheet.dart` — UPI button icon: `account_balance_wallet_rounded` → `smartphone_rounded`
+- `home_screen.dart` — `toolbarHeight: 80`, date shown in AppBar, `enableDrag: true` on sheet
+
+Status: Stable
