@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_colors.dart';
 import '../../router/app_router.dart';
 
-/// Home screen — placeholder for Phase 0.
+/// Home screen — placeholder for Phase 1.
 ///
 /// Contains bottom navigation that allows switching to the Calendar screen.
+/// Full dashboard functionality will be implemented in Phase 2.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -21,7 +23,7 @@ class HomeScreen extends StatelessWidget {
             Icon(
               Icons.home_rounded,
               size: 64,
-              color: Color(0xFF9E9E9E),
+              color: AppColors.textSecondary,
             ),
             SizedBox(height: 16),
             Text(
@@ -29,7 +31,7 @@ class HomeScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFFF5F5F5),
+                color: AppColors.textPrimary,
               ),
             ),
             SizedBox(height: 8),
@@ -37,7 +39,7 @@ class HomeScreen extends StatelessWidget {
               'Transactions will appear here.',
               style: TextStyle(
                 fontSize: 14,
-                color: Color(0xFF9E9E9E),
+                color: AppColors.textSecondary,
               ),
             ),
           ],

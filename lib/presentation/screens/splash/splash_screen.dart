@@ -8,10 +8,15 @@ import '../../router/app_router.dart';
 ///
 /// Startup flow:
 ///   1. Display branding with a fade-in animation (900 ms).
-///   2. After 2 seconds, read [appSettingsProvider] to check first-launch status.
-///   3. Route decision:
+///   2. After a 2-second minimum display period the screen is "ready to navigate".
+///   3. [appSettingsProvider] is watched in [build] via [ref.listen].
+///      As soon as both conditions are true (timer elapsed + data resolved),
+///      the screen navigates:
 ///      - No settings row (fresh install) → [AppRoutes.welcome]
-///      - Settings row exists             → [AppRoutes.home]
+///      - Settings row with isFirstLaunch = false → [AppRoutes.home]
+///
+/// Using [ref.listen] in [build] ensures Riverpod manages the subscription
+/// lifetime and there is no risk of a dangling [listenManual] subscription.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -23,6 +28,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _fadeAnimation;
+
+  /// Set to `true` after the minimum 2-second display period elapses.
+  bool _readyToNavigate = false;
 
   @override
   void initState() {
@@ -40,42 +48,34 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     _controller.forward();
 
-    Future.delayed(const Duration(seconds: 2), _resolveStartupRoute);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() => _readyToNavigate = true);
+        // If the provider has already resolved by the time the timer fires,
+        // _tryNavigate will handle it immediately from the current state.
+        _tryNavigate(ref.read(appSettingsProvider));
+      }
+    });
   }
 
-  /// Reads [appSettingsProvider] and navigates to the correct screen.
-  ///
-  /// Falls back to [AppRoutes.home] on any provider error to avoid
-  /// leaving the user stuck on the splash screen.
-  Future<void> _resolveStartupRoute() async {
-    if (!mounted) return;
-
-    final settingsAsync = ref.read(appSettingsProvider);
+  /// Navigates away when [_readyToNavigate] is true and [settingsAsync]
+  /// contains resolved data. A no-op in all other states.
+  void _tryNavigate(AsyncValue<dynamic> settingsAsync) {
+    if (!_readyToNavigate || !mounted) return;
 
     settingsAsync.when(
       data: (settings) {
-        if (!mounted) return;
         final isFirst = settings == null || settings.isFirstLaunch;
         context.go(isFirst ? AppRoutes.welcome : AppRoutes.home);
       },
       loading: () {
-        // Provider still loading — wait for the listener below to fire.
+        // Data not ready yet — the ref.listen in build() will retry.
       },
       error: (e, _) {
-        if (mounted) context.go(AppRoutes.home);
+        // On database error fall back to Home to avoid leaving the user stuck.
+        context.go(AppRoutes.home);
       },
     );
-
-    // If the provider was still loading, listen for when it resolves.
-    if (settingsAsync.isLoading) {
-      ref.listenManual(appSettingsProvider, (_, next) {
-        next.whenData((settings) {
-          if (!mounted) return;
-          final isFirst = settings == null || settings.isFirstLaunch;
-          context.go(isFirst ? AppRoutes.welcome : AppRoutes.home);
-        });
-      });
-    }
   }
 
   @override
@@ -86,7 +86,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    // ref.listen is managed by Riverpod — subscription is automatically
+    // cancelled when this widget is disposed. Fires every time the provider
+    // emits a new value (loading → data, loading → error, etc.).
+    ref.listen<AsyncValue<dynamic>>(appSettingsProvider, (_, next) {
+      _tryNavigate(next);
+    });
+
     return Scaffold(
+      backgroundColor: const Color(0xFF121212),
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: const Center(
@@ -104,7 +112,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFFF5F5F5),
+                  color: Color(0xFFFFFFFF),
                   letterSpacing: 0.5,
                 ),
               ),
@@ -114,7 +122,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w400,
-                  color: Color(0xFF9E9E9E),
+                  color: Color(0xFFB0B0B0),
                 ),
               ),
             ],

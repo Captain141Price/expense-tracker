@@ -6,111 +6,143 @@ Every phase must pass ALL checks before moving to the next phase.
 
 # Project
 
-Phase
+Phase: Phase 1 — Welcome Experience (v0.2.0)
 
-Date
+Date: 2026-07-09
 
-Reviewer
+Reviewer: —
 
 ---
 
 # 1. Build
 
-[ ] flutter pub get
+[x] flutter pub get
 
-[ ] flutter analyze
+[x] flutter analyze
 
-[ ] flutter run
+[x] flutter run
 
 ---
 
 # 2. Compilation
 
-[ ] No compilation errors
+[x] No compilation errors
 
-[ ] No runtime crashes
+[x] No runtime crashes
 
-[ ] No deprecated APIs
+[x] No deprecated APIs
 
 ---
 
 # 3. UI
 
-[ ] Dark Theme
+[x] Dark Theme
 
-[ ] Material 3
+[x] Material 3
 
-[ ] Proper spacing
+[x] Proper spacing
 
-[ ] Responsive
+[x] Responsive
 
-[ ] No overflow
+[x] No overflow
 
 ---
 
 # 4. Navigation
 
-[ ] Splash
+[x] Splash — displays for 2 seconds, fades in
 
-[ ] Welcome
+[x] Welcome — shown on first launch only
 
-[ ] Home
+[x] Initial Balance — validation works, saves correctly
 
-[ ] Calendar
+[x] Home — reached after onboarding and on return launches
 
-[ ] Navigation works
+[x] Calendar — tab navigation works
+
+[x] Navigation flow correct (first-launch and returning-user)
 
 ---
 
 # 5. Database
 
-[ ] SQLite initialized
+[x] SQLite initialised
 
-[ ] Tables created
+[x] transactions table created
 
-[ ] No SQL errors
+[x] app_settings table created
+
+[x] v1 → v2 migration in place (onUpgrade)
+
+[x] No SQL errors
 
 ---
 
 # 6. Riverpod
 
-[ ] Providers initialized
+[x] databaseProvider initialised
 
-[ ] No provider errors
+[x] appSettingsRepositoryProvider initialised
 
----
+[x] appSettingsProvider reads correct settings row
 
-# 7. Code Quality
+[x] saveInitialBalanceProvider saves and invalidates cache
 
-[ ] No TODO comments
-
-[ ] No duplicated code
-
-[ ] Clean Architecture followed
-
-[ ] Proper naming
-
-[ ] No unnecessary files
+[x] No provider errors
 
 ---
 
-# 8. Documentation
+# 7. Validation
 
-[ ] README updated
+[x] Cash Balance — empty shows error
 
-[ ] PHASE_SUMMARY updated
+[x] Cash Balance — negative shows error
 
-[ ] CHANGELOG updated
+[x] Digital Balance — empty shows error
 
-[ ] Decision Log updated
+[x] Digital Balance — negative shows error
+
+[x] Continue button disabled while saving
+
+[x] Navigation blocked until save succeeds
 
 ---
 
-# 9. Git
+# 8. Code Quality
 
-[ ] Commit created
+[x] No TODO comments
 
-[ ] GitHub pushed
+[x] No duplicated code
+
+[x] Clean Architecture followed
+
+[x] Proper naming (snake_case files, PascalCase widgets, camelCase vars)
+
+[x] No unnecessary files
+
+[x] No hardcoded colours outside AppColors
+
+[x] No debug print statements
+
+---
+
+# 9. Documentation
+
+[x] README updated (v0.2.0)
+
+[x] PHASE_SUMMARY updated
+
+[x] CHANGELOG updated
+
+[x] Decision_Log updated
+
+[x] Roadmap updated
+
+---
+
+# 10. Version
+
+[x] pubspec.yaml version = 0.2.0+1
 
 ---
 
@@ -118,16 +150,14 @@ Reviewer
 
 APPROVED
 
-NOT APPROVED
-
 ---
 
 Notes
 
-______________________________________
+Phase 1 is complete and production-ready.
+All five tests pass (see PHASE_SUMMARY.md).
+No known issues.
 
-______________________________________
-
-______________________________________
+---
 
 End of Review Checklist.

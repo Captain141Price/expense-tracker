@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_colors.dart';
 import '../../router/app_router.dart';
 
-/// Calendar screen — placeholder for Phase 0.
+/// Calendar screen — placeholder for Phase 1.
 ///
 /// Contains bottom navigation that allows switching back to the Home screen.
+/// Full calendar functionality will be implemented in Phase 4.
 class CalendarScreen extends StatelessWidget {
   const CalendarScreen({super.key});
 
@@ -21,7 +23,7 @@ class CalendarScreen extends StatelessWidget {
             Icon(
               Icons.calendar_month_rounded,
               size: 64,
-              color: Color(0xFF9E9E9E),
+              color: AppColors.textSecondary,
             ),
             SizedBox(height: 16),
             Text(
@@ -29,7 +31,7 @@ class CalendarScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFFF5F5F5),
+                color: AppColors.textPrimary,
               ),
             ),
             SizedBox(height: 8),
@@ -37,7 +39,7 @@ class CalendarScreen extends StatelessWidget {
               'Monthly view will appear here.',
               style: TextStyle(
                 fontSize: 14,
-                color: Color(0xFF9E9E9E),
+                color: AppColors.textSecondary,
               ),
             ),
           ],

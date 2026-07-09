@@ -1,6 +1,8 @@
 # Expense Notebook
 
-A clean, scalable personal finance tracker built with Flutter.  
+**Version: 0.2.0**
+
+A clean, offline personal finance tracker built with Flutter.  
 Track income and expenses with ease — designed for clarity and speed.
 
 ---
@@ -25,42 +27,56 @@ This project follows **Clean Architecture**, separating concerns into four layer
 lib/
 ├── core/
 │   ├── constants/        # AppColors, AppTextStyles
-│   ├── providers/        # Riverpod providers (databaseProvider)
+│   ├── providers/        # Riverpod providers
 │   ├── theme/            # AppTheme (Material 3 dark)
 │   └── utils/            # Shared utilities (reserved)
 │
 ├── data/
-│   └── local/            # DatabaseHelper, AppStartupHelper
+│   ├── local/            # DatabaseHelper, AppSettingsLocalDataSource
+│   └── repositories/     # AppSettingsRepositoryImpl
 │
 ├── domain/
-│   └── enums/            # TransactionType, PaymentMode
+│   ├── entities/         # AppSettings
+│   ├── enums/            # TransactionType, PaymentMode
+│   └── repositories/     # AppSettingsRepository (abstract interface)
 │
 └── presentation/
     ├── router/           # AppRouter, AppRoutes (go_router)
     └── screens/
-        ├── splash/       # SplashScreen (startup flow)
-        ├── home/         # HomeScreen (placeholder)
-        └── calendar/     # CalendarScreen (placeholder)
+        ├── splash/       # SplashScreen (startup + route decision)
+        ├── welcome/      # WelcomeScreen (first-launch intro)
+        ├── setup/        # InitialBalanceScreen (opening balances)
+        ├── home/         # HomeScreen (placeholder — Phase 2)
+        └── calendar/     # CalendarScreen (placeholder — Phase 4)
 ```
 
 ---
 
-## Application Startup Flow
+## Application Flow
 
 ```
-Splash Screen
+[App Launch]
      ↓
-First Launch Check  (reads app_settings.isFirstLaunch)
+Splash Screen (2 s minimum)
      ↓
-[First launch]            [Returning user]
-     ↓                           ↓
-Initial Setup Screen        Dashboard (Home)
+Read app_settings from SQLite
      ↓
-Dashboard (Home)
+Is First Launch?
+     │                    │
+    YES                   NO
+     ↓                    ↓
+Welcome Screen        Home Screen
+     ↓
+Continue
+     ↓
+Initial Balance Screen
+  • Enter Cash Balance
+  • Enter Digital Balance
+     ↓
+Save → isFirstLaunch = false
+     ↓
+Home Screen
 ```
-
-> `AppStartupHelper` encapsulates the first-launch check.  
-> The `/setup` route is registered and ready. The Initial Setup screen will be implemented in Phase 1.
 
 ---
 
@@ -81,11 +97,12 @@ Expense Notebook intentionally supports **three** payment modes only:
 ## Theme
 
 - **Dark mode only** (Material 3)
-- 🔵 Blue → Income
-- 🔴 Red → Expense
+- 🔵 Blue (`#4A90D9`) → Income
+- 🔴 Red (`#E05252`) → Expense
 - ⚫ Neutral grayscale → everything else
 - Rounded cards (`borderRadius: 16`)
-- Modern typography (Material 3 type scale)
+- Rounded buttons and fields (`borderRadius: 14`)
+- Material 3 type scale typography
 
 ---
 
@@ -107,14 +124,14 @@ Expense Notebook intentionally supports **three** payment modes only:
 
 **Table: `app_settings`**
 
-| Column           | Type    | Constraints |
-|------------------|---------|-------------|
-| `id`             | INTEGER | PRIMARY KEY |
-| `initialCash`    | REAL    | NOT NULL    |
-| `initialDigital` | REAL    | NOT NULL    |
-| `isFirstLaunch`  | INTEGER | NOT NULL    |
-| `createdAt`      | TEXT    | NOT NULL    |
-| `updatedAt`      | TEXT    | NOT NULL    |
+| Column           | Type    | Notes |
+|------------------|---------|-------|
+| `id`             | INTEGER | PRIMARY KEY (always 1) |
+| `initialCash`    | REAL    | NOT NULL — set during first launch |
+| `initialDigital` | REAL    | NOT NULL — set during first launch |
+| `isFirstLaunch`  | INTEGER | 1 = first launch, 0 = returning user |
+| `createdAt`      | TEXT    | ISO-8601 timestamp |
+| `updatedAt`      | TEXT    | ISO-8601 timestamp |
 
 ---
 
@@ -137,14 +154,24 @@ flutter run
 
 | File | Purpose |
 |------|---------|
+| `docs/Architecture.md` | System architecture overview |
+| `docs/UI_Guidelines.md` | Design system rules |
 | `docs/Decision_Log.md` | Architecture and design decisions |
+| `docs/CHANGELOG.md` | Version history |
+| `docs/Roadmap.md` | Development phases |
 | `PHASE_SUMMARY.md` | Latest phase completion summary |
 
 ---
 
 ## Development Phases
 
-- **Phase 0** ✅ — Project foundation (architecture, theme, database, routing)
-- **Phase 0.1** ✅ — Review improvements (payment modes, app_settings, startup flow)
-- **Phase 1** 🔜 — Core features (transaction entry, listing, Initial Setup screen)
-- **Phase 2** 🔜 — Calendar view and filtering
+| Phase | Status | Description |
+|-------|--------|-------------|
+| Phase 0 | ✅ | Project foundation — architecture, theme, database, routing |
+| Phase 0.1 | ✅ | Review improvements — payment modes, app_settings, startup prep |
+| Phase 1 | ✅ | Welcome experience — onboarding flow, initial balance entry |
+| Phase 2 | 🔜 | Dashboard — balance display, transaction listing |
+| Phase 3 | 🔜 | Add transactions — entry form, payment mode selection |
+| Phase 4 | 🔜 | Calendar view and filtering |
+| Phase 5 | 🔜 | Edit / Delete & recalculation |
+| Phase 6 | 🔜 | UI polish & production release |

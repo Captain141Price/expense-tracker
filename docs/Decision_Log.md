@@ -46,7 +46,9 @@ First Launch Check  (reads app_settings.isFirstLaunch)
   ↓
 [First launch]         [Returning user]
   ↓                          ↓
-Initial Setup           Dashboard (Home)
+Welcome Screen          Dashboard (Home)
+  ↓
+Initial Balance Screen
   ↓
 Dashboard (Home)
 ```
@@ -54,36 +56,54 @@ Dashboard (Home)
 **Reason**
 
 Provides a scalable initialization process.
-The `AppStartupHelper` encapsulates the first-launch check so the
-SplashScreen does not contain business logic.
-The `/setup` route constant is already registered in `AppRoutes`
-so Phase 1 only needs to add the screen widget.
+`AppSettingsRepository` encapsulates all read/write logic.
+The SplashScreen contains no business logic — it only reads the provider.
 
+---
 
-Removed Bank Transfer
+## Version 1.0.0
 
-Reason
+---
 
-Application simplicity
+### Decision — Clean Architecture layers for AppSettings
 
-----------------
+**Reason**
 
-Added app_settings
+Following the existing project architecture:
 
-Reason
+- `AppSettings` — domain entity (immutable, no Flutter dependencies)
+- `AppSettingsRepository` — abstract interface in domain layer
+- `AppSettingsLocalDataSource` — SQLite operations in data layer
+- `AppSettingsRepositoryImpl` — concrete implementation
+- `appSettingsRepositoryProvider` / `appSettingsProvider` — Riverpod wiring
 
-Store first launch data
+This ensures business logic never leaks into the UI layer.
 
-----------------
+---
 
-Startup Flow
+### Decision — SplashScreen uses `ref.listen` in `build` + `_readyToNavigate` flag
 
-Splash
+**Reason**
 
-↓
+The initial implementation used `ref.listenManual` inside a `Future.delayed`
+callback. This created a dangling subscription risk: the returned
+`ProviderSubscription` was never stored or cancelled, so it could fire
+after the widget was disposed or after navigation had already occurred.
 
-Welcome Setup
+The replacement uses:
+- A `_readyToNavigate` boolean set by the timer
+- `ref.listen` in `build()` — Riverpod manages the subscription lifetime
+- `_tryNavigate()` called from both the timer callback and the listener
 
-↓
+Whichever resolves last (timer or DB) triggers navigation exactly once.
 
-Dashboard
+---
+
+### Decision — `SaveInitialBalanceNotifier` invalidates `appSettingsProvider` after save
+
+**Reason**
+
+After saving the initial balances, `ref.invalidate(appSettingsProvider)`
+forces a fresh read of `app_settings` on the next access. This ensures
+returning users are correctly routed to Home (not Welcome) on the next
+app launch without requiring a manual cache clear.

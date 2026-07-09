@@ -17,9 +17,6 @@ class AppStartupHelper {
   final Database _db;
 
   /// Returns `true` when no settings row exists or [isFirstLaunch] == 1.
-  ///
-  /// Phase 1 will insert the settings row after the user completes
-  /// the Initial Setup screen. Until then this always returns `true`.
   Future<bool> isFirstLaunch() async {
     final rows = await _db.query(
       DatabaseHelper.tableAppSettings,
