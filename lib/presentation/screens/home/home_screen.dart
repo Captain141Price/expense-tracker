@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
@@ -10,12 +11,11 @@ import 'widgets/balance_card.dart';
 import 'widgets/balance_row.dart';
 import 'widgets/recent_transactions_section.dart';
 import 'widgets/today_summary_card.dart';
-import 'package:go_router/go_router.dart';
 
-/// Dashboard screen — Phase 2 / Phase 2.1.
+/// Dashboard screen — Phase 2 / Phase 2.1 / Phase 4.
 ///
 /// Displays all balance cards, today's summary, and recent transactions.
-/// AppBar shows today's date below the app name.
+/// AppBar shows today's date, Search button, and Settings button.
 /// FAB opens the Add Transaction sheet.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -37,7 +37,6 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(dashboardSummaryProvider);
-    final transactionsAsync = ref.watch(recentTransactionsProvider);
 
     final now = DateTime.now();
     final dayName = _dayFmt.format(now);
@@ -66,6 +65,18 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search_rounded),
+            onPressed: () => context.push(AppRoutes.search),
+            tooltip: 'Search Transactions',
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings_rounded),
+            onPressed: () => context.push(AppRoutes.settings),
+            tooltip: 'Settings',
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -95,7 +106,7 @@ class HomeScreen extends ConsumerWidget {
               const SizedBox(height: 24),
 
               // ── Recent Transactions ────────────────────────────────────
-              RecentTransactionsSection(transactionsAsync: transactionsAsync),
+              const RecentTransactionsSection(),
             ],
           ),
         ),

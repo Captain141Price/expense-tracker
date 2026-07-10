@@ -33,14 +33,32 @@
 - Task 12: Cleanup — no unused imports, no dead code, no warnings
 - Task 13: flutter analyze → 0 issues
 
-## ⬜ Phase 3
-- Add Transactions
+## ✅ Phase 3 — Calendar & Daily Ledger
+- M1: Calendar monthly view — Material 3 grid, month navigation, income/expense per day cell
+- M2: Tap to open ledger — prefetch + slide transition
+- M3: Daily Ledger layout — date header, opening balance, transactions, summary, closing balance
+- M4: Balance calculations — BalanceCalculator, never stored, always recalculated
+- M5: Empty day handling — opening/closing balance still displayed correctly
+- M6: Riverpod performance — family provider, skipLoadingOnReload, no duplicate SQL
+- M7: Testing — flutter analyze 0 issues
 
-## ⬜ Phase 4
-- Calendar & Notebook
+## ✅ Phase 3.1 — Calendar & Ledger Polish
+- T1: Cell amounts use +/− prefix without ₹
+- T2–T4: Uniform cell/chip/card layout
+- T5: Identical padding on all ledger cards
+- T6: AnimatedSwitcher + _slidePage for smooth transitions
+- T7: Empty month state in totals row
+- T8: Empty day still shows opening/closing balance
+- T9: monthTotalsFromSummaries — zero extra SQL
+- T10–T15: Long title ellipsis, responsive, accessible, documented
+
+## ✅ Phase 4 — Productivity & Data Management
+- M1: Search transactions (title, mode, date)
+- M2–M3: Jump to Date and Go to Today navigation
+- M4: CSV / PDF Ledger export (with running balance)
+- M5–M6: Database Backup and Restore
+- M7: Delete All Data with text confirmation
+- M8–M10: Database health metrics, offline-first policy, flutter analyze 0 issues
 
 ## ⬜ Phase 5
-- Edit/Delete & Recalculation
-
-## ⬜ Phase 6
-- UI Polish & Production Release
+- UI Polish & Production Release

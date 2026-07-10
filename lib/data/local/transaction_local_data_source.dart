@@ -147,7 +147,127 @@ class TransactionLocalDataSource {
     );
   }
 
+  // ─── Phase 3 — Calendar & Ledger ──────────────────────────────────────────
+
+  /// Returns all transactions where `date >= [from]` and `date < [until]`.
+  ///
+  /// Uses a half-open range on TEXT date columns (yyyy-MM-dd lexicographic
+  /// ordering is identical to chronological ordering for ISO-8601 dates).
+  Future<List<TransactionEntry>> getTransactionsByDateRange({
+    required DateTime from,
+    required DateTime until,
+  }) async {
+    final fromStr = _dateFmt.format(from);
+    final untilStr = _dateFmt.format(until);
+
+    final rows = await _db.rawQuery(
+      '''
+      SELECT *
+        FROM ${DatabaseHelper.tableTransactions}
+       WHERE ${DatabaseHelper.colDate} >= ?
+         AND ${DatabaseHelper.colDate}  < ?
+       ORDER BY ${DatabaseHelper.colDate} ASC,
+                ${DatabaseHelper.colTime} ASC
+      ''',
+      [fromStr, untilStr],
+    );
+    return rows.map(_rowToEntity).toList();
+  }
+
+  /// Returns all transactions whose `date` column equals [date], ordered
+  /// by `time` descending (newest first within the day).
+  Future<List<TransactionEntry>> getTransactionsForDate(DateTime date) async {
+    final dateStr = _dateFmt.format(date);
+
+    final rows = await _db.rawQuery(
+      '''
+      SELECT *
+        FROM ${DatabaseHelper.tableTransactions}
+       WHERE ${DatabaseHelper.colDate} = ?
+       ORDER BY ${DatabaseHelper.colTime} DESC
+      ''',
+      [dateStr],
+    );
+    return rows.map(_rowToEntity).toList();
+  }
+
+  /// Returns the SUM of amounts for rows where `date` is strictly before
+  /// [before] and `type` matches [isIncome].
+  ///
+  /// TEXT date comparison is safe because yyyy-MM-dd sorts lexicographically.
+  Future<double> sumBeforeDate({
+    required DateTime before,
+    required bool isIncome,
+  }) async {
+    final beforeStr = _dateFmt.format(before);
+    final typeName = isIncome
+        ? TransactionType.income.name
+        : TransactionType.expense.name;
+
+    final rows = await _db.rawQuery(
+      '''
+      SELECT COALESCE(SUM(${DatabaseHelper.colAmount}), 0) AS total
+        FROM ${DatabaseHelper.tableTransactions}
+       WHERE ${DatabaseHelper.colType} = ?
+         AND ${DatabaseHelper.colDate}  < ?
+      ''',
+      [typeName, beforeStr],
+    );
+    return (rows.first['total'] as num? ?? 0).toDouble();
+  }
+
+  // ─── Phase 4 — Search, Exports & Settings ──────────────────────────────────
+
+  /// Searches transactions matching title, payment mode, or date case-insensitively,
+  /// ordered newest first.
+  Future<List<TransactionEntry>> searchTransactions(String query) async {
+    final likeQuery = '%$query%';
+    final rows = await _db.rawQuery(
+      '''
+      SELECT *
+        FROM ${DatabaseHelper.tableTransactions}
+       WHERE ${DatabaseHelper.colTitle} LIKE ?
+          OR ${DatabaseHelper.colPaymentMode} LIKE ?
+          OR ${DatabaseHelper.colDate} LIKE ?
+       ORDER BY ${DatabaseHelper.colDate} DESC,
+                ${DatabaseHelper.colTime} DESC
+      ''',
+      [likeQuery, likeQuery, likeQuery],
+    );
+    return rows.map(_rowToEntity).toList();
+  }
+
+  /// Returns all transactions ordered newest first.
+  Future<List<TransactionEntry>> getAllTransactions() async {
+    final rows = await _db.rawQuery(
+      '''
+      SELECT *
+        FROM ${DatabaseHelper.tableTransactions}
+       ORDER BY ${DatabaseHelper.colDate} DESC,
+                ${DatabaseHelper.colTime} DESC
+      ''',
+    );
+    return rows.map(_rowToEntity).toList();
+  }
+
+  /// Deletes all transactions and app settings.
+  Future<void> deleteAllData() async {
+    await _db.transaction((txn) async {
+      await txn.delete(DatabaseHelper.tableTransactions);
+      await txn.delete(DatabaseHelper.tableAppSettings);
+    });
+  }
+
+  /// Returns the total count of transactions in the database.
+  Future<int> getTransactionCount() async {
+    final result = await _db.rawQuery(
+      'SELECT COUNT(*) as count FROM ${DatabaseHelper.tableTransactions}',
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
   // ─── Mapper ───────────────────────────────────────────────────────────────
+
 
   TransactionEntry _rowToEntity(Map<String, dynamic> row) {
     final dateStr = row[DatabaseHelper.colDate] as String;

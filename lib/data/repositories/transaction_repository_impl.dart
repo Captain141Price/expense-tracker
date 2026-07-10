@@ -41,4 +41,43 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<void> deleteTransaction(int id) =>
       _dataSource.deleteTransaction(id);
+
+  // ─── Phase 3 — Calendar & Ledger ─────────────────────────────────────────
+
+  @override
+  Future<List<TransactionEntry>> getTransactionsByDateRange({
+    required DateTime from,
+    required DateTime until,
+  }) =>
+      _dataSource.getTransactionsByDateRange(from: from, until: until);
+
+  @override
+  Future<List<TransactionEntry>> getTransactionsForDate(DateTime date) =>
+      _dataSource.getTransactionsForDate(date);
+
+  @override
+  Future<double> sumBeforeDate({
+    required DateTime before,
+    required bool isIncome,
+  }) =>
+      _dataSource.sumBeforeDate(before: before, isIncome: isIncome);
+
+  // ─── Phase 4 — Search, Exports & Settings ────────────────────────────────
+
+  @override
+  Future<List<TransactionEntry>> searchTransactions(String query) =>
+      _dataSource.searchTransactions(query);
+
+  @override
+  Future<List<TransactionEntry>> getAllTransactions() =>
+      _dataSource.getAllTransactions();
+
+  @override
+  Future<void> deleteAllData() =>
+      _dataSource.deleteAllData();
+
+  @override
+  Future<int> getTransactionCount() =>
+      _dataSource.getTransactionCount();
 }
+

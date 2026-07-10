@@ -155,3 +155,91 @@ Changed
 - `_SummaryItem` value text: `overflow: TextOverflow.ellipsis`
 
 Status: Stable
+
+---
+
+## v0.4.0 — Phase 3: Calendar & Daily Ledger
+
+Added
+
+- `DailySummary` — domain entity for per-day income/expense aggregates
+- `DailyLedger` — domain entity for the full daily ledger (opening balance, transactions, closing balance)
+- `BalanceCalculator` — shared, stateless balance arithmetic; all opening/closing balance logic lives here
+- `LedgerService` — dedicated service for Calendar and Ledger logic (separate from TransactionService)
+- `getTransactionsByDateRange` / `getTransactionsForDate` / `sumBeforeDate` — three new repository + data source methods
+- `calendarMonthProvider` — `StateProvider<DateTime>` tracking displayed calendar month
+- `monthSummariesProvider` — `FutureProvider<Map<String, DailySummary>>` for calendar grid data
+- `dailyLedgerProvider` — `FutureProvider.family<DailyLedger, DateTime>` for per-day ledger
+- `ledgerServiceProvider` — `FutureProvider<LedgerService>`
+- `CalendarScreen` — Material 3 monthly calendar with month navigation and per-day income/expense cells
+- `CalendarHeader` — prev/next month navigation widget
+- `CalendarDayCell` — individual day cell with today indicator and amount totals
+- `DailyLedgerScreen` — full daily ledger with opening balance, transactions, summary, closing balance
+- `LedgerDateHeader` — weekday name + full date widget
+- `LedgerBalanceTile` — reusable opening/closing balance card
+- `LedgerTransactionItem` — single transaction row with payment chip
+- `LedgerSummaryCard` — income / expense / net / count summary card
+- `CurrencyFormatter.formatCompact` — compact amount formatter for calendar cells
+- Ledger route: `/ledger/:date` (yyyy-MM-dd param)
+- Prefetch on tap: `ref.read(dailyLedgerProvider(date).future).ignore()` before navigation
+
+Changed
+
+- `TransactionRepository` — +3 abstract methods for Phase 3
+- `TransactionRepositoryImpl` — +3 delegate methods
+- `TransactionLocalDataSource` — +3 SQL methods (half-open range, per-date query, sum-before-date)
+- `providers.dart` — `AddTransactionNotifier`, `EditTransactionNotifier`, `DeleteTransactionNotifier` now also invalidate `monthSummariesProvider` and `dailyLedgerProvider`
+- `AppRouter` — added calendar `_fadePage`, ledger `/ledger/:date` `_slidePage` (horizontal slide)
+- `AppRoutes` — added `ledger` constant and `ledgerPath(DateTime)` helper
+
+Balance Rules
+
+  Opening Balance = initialCash + initialDigital + Σ income(date < day) − Σ expense(date < day)
+  Closing Balance = Opening Balance + day income − day expense
+  Monthly Totals  = Σ DailySummary values (zero extra SQL queries)
+  Nothing is stored — always calculated.
+
+Status: Stable
+
+---
+
+## v0.4.1 — Phase 3.1: Calendar & Ledger Polish
+
+Changed
+
+- `CalendarDayCell` — amounts now use +/− prefix without ₹ symbol (T1); uniform SizedBox heights prevent row-height inconsistency across weeks (T2); active days have bolder font weight (T12)
+- `CalendarScreen` — monthly totals row (+income / −expense) derived from summaries with zero extra SQL (T11); AnimatedSwitcher with ValueKey on grid for flicker-free month transitions (T6); empty month "No transactions this month." shown in totals row (T7)
+- `LedgerTransactionItem` — Title is primary, time moves beside chip (T3); extracted `_PaymentModeChip` with fixed height 22, uniform padding/radius/icon/text (T4); maxLines:1 + ellipsis on title (T10)
+- `LedgerBalanceTile` — margin:zero, padding:all(16) to match other cards exactly (T5)
+- `LedgerSummaryCard` — margin:zero, padding:all(16) for uniform card consistency (T5)
+- `DailyLedgerScreen` — spacing reduced to 12px between cards; AlwaysScrollableScrollPhysics (T13); empty-day state always shows Opening and Closing Balance (T8)
+- `AppRouter` — calendar route now uses `_fadePage`; ledger route uses dedicated `_slidePage` (horizontal slide, easeOutCubic — T6)
+- `LedgerService` — added `monthTotalsFromSummaries` static method (no extra SQL — T9)
+
+Status: Stable
+
+---
+
+## v0.5.0 — Phase 4: Productivity & Data Management
+
+Added
+
+- `SearchScreen` — Full-screen transaction search matching title, payment mode, and date case-insensitively, ordered newest first (Milestone 1).
+- `SettingsScreen` — Categorized settings with Data (Backup, Restore, Export CSV, Export PDF, Delete All Data), read-only Database Health (DB size, total transactions, last backup, SQLite version, database path), and Application details (Milestones 4-8).
+- `DatabaseService` — Centralized exports (CSV / PDF table with Running Balance) and database backup/restore helpers (Milestone 4-6).
+- `homeFilterTypeProvider` & `homeFilterModeProvider` — Riverpod StateProviders for transaction type and payment mode filters.
+- `calendarSelectedDateProvider` — StateProvider to track selected/highlighted date in Calendar.
+- ChoiceChips on Dashboard — Type (All, Income, Expense) and Payment Mode (All, Cash, UPI, Card) chips to reactively filter Recent Transactions.
+- "Jump to Date" button in Calendar screen AppBar — selects date using Material Date Picker, jumps calendar month view, and highlights selection (Milestone 2).
+- "Today" button shortcut in Calendar Header — jumps view back to current month and highlights today's cell (Milestone 3).
+- Wiping all database data with DELETE confirmation dialog and redirect to startup welcoming/onboarding (Milestone 7).
+- Offline-first policy — all operations run locally without external cloud sync.
+
+Changed
+
+- `TransactionRepository` & repository implementations — added `searchTransactions()`, `getAllTransactions()`, `deleteAllData()`, and `getTransactionCount()` methods.
+- `DatabaseHelper` — added `closeDatabase()` to safely release file locks during restores.
+- `AppRouter` — added `/search` and `/settings` routes.
+- `pubspec.yaml` — added standard `share_plus`, `file_picker`, `path_provider`, and `pdf` package dependencies.
+
+Status: Stable

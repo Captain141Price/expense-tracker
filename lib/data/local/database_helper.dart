@@ -41,6 +41,15 @@ class DatabaseHelper {
     return _database!;
   }
 
+  /// Closes the database connection and resets the singleton instance reference.
+  Future<void> closeDatabase() async {
+    if (_database != null) {
+      await _database!.close();
+      _database = null;
+    }
+  }
+
+
   Future<Database> _initDatabase() async {
     final databasesPath = await getDatabasesPath();
     final path = join(databasesPath, _databaseName);

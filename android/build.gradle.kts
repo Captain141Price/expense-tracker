@@ -1,3 +1,6 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 allprojects {
     repositories {
         google()
@@ -14,6 +17,11 @@ rootProject.layout.buildDirectory.value(newBuildDir)
 subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
+
+    // Flutter plugins are Android library modules that declare Java 11.
+    // Match their Kotlin target to Java 11 while the app module keeps its
+    // explicit Java/Kotlin 17 configuration in app/build.gradle.kts.
+    
 }
 subprojects {
     project.evaluationDependsOn(":app")
@@ -22,3 +30,4 @@ subprojects {
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
+

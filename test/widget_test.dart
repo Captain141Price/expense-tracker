@@ -12,5 +12,8 @@ void main() {
     );
     // Verify the app initialises without throwing.
     expect(find.byType(ExpenseNotebookApp), findsOneWidget);
+
+    // Advance the splash screen delay timer to resolve pending timer assertions.
+    await tester.pump(const Duration(seconds: 2));
   });
 }
